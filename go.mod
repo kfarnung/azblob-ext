@@ -1,4 +1,4 @@
-module github.com/kfarnung/azblob-ext
+module github.com/kfarnung/go-azblobext
 
 go 1.13
 
