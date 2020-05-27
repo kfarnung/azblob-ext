@@ -59,10 +59,10 @@ func (s *azblobextSuite) TestSectionWriter(c *chk.C) {
 }
 
 func (s *azblobextSuite) TestSectionWriterCopySrcDestEmpty(c *chk.C) {
-	input := make([]byte, 0)
+	var input []byte
 	reader := bytes.NewReader(input)
 
-	output := make([]byte, 0)
+	var output []byte
 	buffer := newBytesWriter(output)
 	section := newSectionWriter(buffer, 0, 0)
 
@@ -75,7 +75,7 @@ func (s *azblobextSuite) TestSectionWriterCopyDestEmpty(c *chk.C) {
 	input := make([]byte, 10)
 	reader := bytes.NewReader(input)
 
-	output := make([]byte, 0)
+	var output []byte
 	buffer := newBytesWriter(output)
 	section := newSectionWriter(buffer, 0, 0)
 
