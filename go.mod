@@ -1,6 +1,6 @@
 module github.com/kfarnung/azblob-ext
 
-go 1.14
+go 1.13
 
 require (
 	github.com/Azure/azure-pipeline-go v0.2.2

@@ -3,7 +3,7 @@ go:
 - "1.13"
 script:
 - export GO111MODULE=on
-- GOOS=linux go build ./azblobext
-- GOOS=darwin go build ./azblobext
-- GOOS=windows go build ./azblobext
-- go test -race -short -cover -v ./azblobext
+- GOOS=linux go build
+- GOOS=darwin go build
+- GOOS=windows go build
+- go test -race -short -cover -v
