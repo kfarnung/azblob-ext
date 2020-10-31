@@ -41,7 +41,7 @@ func uploadReaderAtToBlockBlob(ctx context.Context, reader io.ReaderAt, readerSi
 			body = pipeline.NewRequestBodyProgress(body, o.Progress)
 		}
 
-		return blockBlobURL.Upload(ctx, body, o.BlobHTTPHeaders, o.Metadata, o.AccessConditions)
+		return blockBlobURL.Upload(ctx, body, o.BlobHTTPHeaders, o.Metadata, o.AccessConditions, o.BlobAccessTier, o.BlobTagsMap)
 	}
 
 	numBlocks := uint16(((readerSize - 1) / o.BlockSize) + 1)
@@ -85,7 +85,7 @@ func uploadReaderAtToBlockBlob(ctx context.Context, reader io.ReaderAt, readerSi
 	}
 
 	// All put blocks were successful, call Put Block List to finalize the blob
-	return blockBlobURL.CommitBlockList(ctx, blockIDList, o.BlobHTTPHeaders, o.Metadata, o.AccessConditions)
+	return blockBlobURL.CommitBlockList(ctx, blockIDList, o.BlobHTTPHeaders, o.Metadata, o.AccessConditions, o.BlobAccessTier, o.BlobTagsMap)
 }
 
 // UploadFileToBlockBlob uploads a file in blocks to a block blob.
