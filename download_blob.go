@@ -11,18 +11,28 @@ import (
 )
 
 // downloadBlobToWriterAt downloads an Azure blob to a buffer with parallel.
-func downloadBlobToWriterAt(ctx context.Context, blobURL azblob.BlobURL, offset int64, count int64,
-	writer io.WriterAt, o azblob.DownloadFromBlobOptions, initialDownloadResponse *azblob.DownloadResponse) error {
+func downloadBlobToWriterAt(
+	ctx context.Context,
+	blobURL azblob.BlobURL,
+	offset int64,
+	count int64,
+	writer io.WriterAt,
+	o azblob.DownloadFromBlobOptions,
+	initialDownloadResponse *azblob.DownloadResponse,
+	cpk azblob.ClientProvidedKeyOptions,
+) error {
 	if o.BlockSize == 0 {
 		o.BlockSize = azblob.BlobDefaultDownloadBlockSize
 	}
 
-	if count == azblob.CountToEnd { // If size not specified, calculate it
+	// If size not specified, calculate it
+	if count == azblob.CountToEnd {
 		if initialDownloadResponse != nil {
-			count = initialDownloadResponse.ContentLength() - offset // if we have the length, use it
+			// If we have the length, use it
+			count = initialDownloadResponse.ContentLength() - offset
 		} else {
 			// If we don't have the length at all, get it
-			dr, err := blobURL.Download(ctx, 0, azblob.CountToEnd, o.AccessConditions, false)
+			dr, err := blobURL.Download(ctx, 0, azblob.CountToEnd, o.AccessConditions, false, cpk)
 			if err != nil {
 				return err
 			}
@@ -45,7 +55,14 @@ func downloadBlobToWriterAt(ctx context.Context, blobURL azblob.BlobURL, offset 
 		ChunkSize:     o.BlockSize,
 		Parallelism:   o.Parallelism,
 		Operation: func(chunkStart int64, count int64, ctx context.Context) error {
-			dr, err := blobURL.Download(ctx, chunkStart+offset, count, o.AccessConditions, false)
+			dr, err := blobURL.Download(
+				ctx,
+				chunkStart+offset,
+				count,
+				o.AccessConditions,
+				false,
+				cpk,
+			)
 			if err != nil {
 				return err
 			}
@@ -80,14 +97,21 @@ func downloadBlobToWriterAt(ctx context.Context, blobURL azblob.BlobURL, offset 
 // DownloadBlobToFile downloads an Azure blob to a local file.
 // The file would be truncated if the size doesn't match.
 // Offset and count are optional, pass 0 for both to download the entire blob.
-func DownloadBlobToFile(ctx context.Context, blobURL azblob.BlobURL, offset int64, count int64,
-	file *os.File, o azblob.DownloadFromBlobOptions) error {
+func DownloadBlobToFile(
+	ctx context.Context,
+	blobURL azblob.BlobURL,
+	offset int64,
+	count int64,
+	file *os.File,
+	o azblob.DownloadFromBlobOptions,
+	cpk azblob.ClientProvidedKeyOptions,
+) error {
 	// 1. Calculate the size of the destination file
 	var size int64
 
 	if count == azblob.CountToEnd {
 		// Try to get Azure blob's size
-		props, err := blobURL.GetProperties(ctx, o.AccessConditions)
+		props, err := blobURL.GetProperties(ctx, o.AccessConditions, cpk)
 		if err != nil {
 			return err
 		}
@@ -109,7 +133,7 @@ func DownloadBlobToFile(ctx context.Context, blobURL azblob.BlobURL, offset int6
 	}
 
 	if size > 0 {
-		return downloadBlobToWriterAt(ctx, blobURL, offset, size, file, o, nil)
+		return downloadBlobToWriterAt(ctx, blobURL, offset, size, file, o, nil, cpk)
 	}
 
 	// if the blob's size is 0, there is no need in downloading it
