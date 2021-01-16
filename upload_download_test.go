@@ -19,7 +19,10 @@ func generateFile(fileName string, fileSize int) []byte {
 	return bigBuff
 }
 
-func performUploadAndDownloadFileTest(c *chk.C, fileSize, blockSize, parallelism, downloadOffset, downloadCount int) {
+func performUploadAndDownloadFileTest(
+	c *chk.C,
+	fileSize, blockSize, parallelism, downloadOffset, downloadCount int,
+) {
 	// Set up file to upload
 	fileName := "BigFile.bin"
 	fileData := generateFile(fileName, fileSize)
@@ -48,9 +51,14 @@ func performUploadAndDownloadFileTest(c *chk.C, fileSize, blockSize, parallelism
 			Parallelism: uint16(parallelism),
 			// If Progress is non-nil, this function is called periodically as bytes are uploaded.
 			Progress: func(bytesTransferred int64) {
-				c.Assert(bytesTransferred > 0 && bytesTransferred <= int64(fileSize), chk.Equals, true)
+				c.Assert(
+					bytesTransferred > 0 && bytesTransferred <= int64(fileSize),
+					chk.Equals,
+					true,
+				)
 			},
-		})
+		},
+		azblob.ClientProvidedKeyOptions{})
 	c.Assert(err, chk.IsNil)
 	c.Assert(response.Response().StatusCode, chk.Equals, 201)
 
@@ -62,15 +70,26 @@ func performUploadAndDownloadFileTest(c *chk.C, fileSize, blockSize, parallelism
 	defer os.Remove(destFileName)
 
 	// Perform download
-	err = DownloadBlobToFile(context.Background(), blockBlobURL.BlobURL, int64(downloadOffset), int64(downloadCount),
+	err = DownloadBlobToFile(
+		context.Background(),
+		blockBlobURL.BlobURL,
+		int64(downloadOffset),
+		int64(downloadCount),
 		destFile,
 		azblob.DownloadFromBlobOptions{
 			BlockSize:   int64(blockSize),
 			Parallelism: uint16(parallelism),
 			// If Progress is non-nil, this function is called periodically as bytes are uploaded.
 			Progress: func(bytesTransferred int64) {
-				c.Assert(bytesTransferred > 0 && bytesTransferred <= int64(fileSize), chk.Equals, true)
-			}})
+				c.Assert(
+					bytesTransferred > 0 && bytesTransferred <= int64(fileSize),
+					chk.Equals,
+					true,
+				)
+			},
+		},
+		azblob.ClientProvidedKeyOptions{},
+	)
 
 	// Assert download was successful
 	c.Assert(err, chk.IsNil)
@@ -133,7 +152,14 @@ func (s *azblobextSuite) TestUploadAndDownloadFileNonZeroOffset(c *chk.C) {
 	parallelism := 3
 	downloadOffset := 1000
 	downloadCount := 0
-	performUploadAndDownloadFileTest(c, fileSize, blockSize, parallelism, downloadOffset, downloadCount)
+	performUploadAndDownloadFileTest(
+		c,
+		fileSize,
+		blockSize,
+		parallelism,
+		downloadOffset,
+		downloadCount,
+	)
 }
 
 func (s *azblobextSuite) TestUploadAndDownloadFileNonZeroCount(c *chk.C) {
@@ -142,7 +168,14 @@ func (s *azblobextSuite) TestUploadAndDownloadFileNonZeroCount(c *chk.C) {
 	parallelism := 3
 	downloadOffset := 0
 	downloadCount := 6000
-	performUploadAndDownloadFileTest(c, fileSize, blockSize, parallelism, downloadOffset, downloadCount)
+	performUploadAndDownloadFileTest(
+		c,
+		fileSize,
+		blockSize,
+		parallelism,
+		downloadOffset,
+		downloadCount,
+	)
 }
 
 func (s *azblobextSuite) TestUploadAndDownloadFileNonZeroOffsetAndCount(c *chk.C) {
@@ -151,5 +184,12 @@ func (s *azblobextSuite) TestUploadAndDownloadFileNonZeroOffsetAndCount(c *chk.C
 	parallelism := 3
 	downloadOffset := 1000
 	downloadCount := 6000
-	performUploadAndDownloadFileTest(c, fileSize, blockSize, parallelism, downloadOffset, downloadCount)
+	performUploadAndDownloadFileTest(
+		c,
+		fileSize,
+		blockSize,
+		parallelism,
+		downloadOffset,
+		downloadCount,
+	)
 }

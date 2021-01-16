@@ -13,8 +13,14 @@ import (
 )
 
 // uploadReaderAtToBlockBlob uploads a buffer in blocks to a block blob.
-func uploadReaderAtToBlockBlob(ctx context.Context, reader io.ReaderAt, readerSize int64,
-	blockBlobURL azblob.BlockBlobURL, o azblob.UploadToBlockBlobOptions) (azblob.CommonResponse, error) {
+func uploadReaderAtToBlockBlob(
+	ctx context.Context,
+	reader io.ReaderAt,
+	readerSize int64,
+	blockBlobURL azblob.BlockBlobURL,
+	o azblob.UploadToBlockBlobOptions,
+	cpk azblob.ClientProvidedKeyOptions,
+) (azblob.CommonResponse, error) {
 	if o.BlockSize == 0 {
 		// If bufferSize > (BlockBlobMaxStageBlockBytes * BlockBlobMaxBlocks), then error
 		if readerSize > azblob.BlockBlobMaxStageBlockBytes*azblob.BlockBlobMaxBlocks {
@@ -41,7 +47,16 @@ func uploadReaderAtToBlockBlob(ctx context.Context, reader io.ReaderAt, readerSi
 			body = pipeline.NewRequestBodyProgress(body, o.Progress)
 		}
 
-		return blockBlobURL.Upload(ctx, body, o.BlobHTTPHeaders, o.Metadata, o.AccessConditions, o.BlobAccessTier, o.BlobTagsMap)
+		return blockBlobURL.Upload(
+			ctx,
+			body,
+			o.BlobHTTPHeaders,
+			o.Metadata,
+			o.AccessConditions,
+			o.BlobAccessTier,
+			o.BlobTagsMap,
+			cpk,
+		)
 	}
 
 	numBlocks := uint16(((readerSize - 1) / o.BlockSize) + 1)
@@ -76,7 +91,14 @@ func uploadReaderAtToBlockBlob(ctx context.Context, reader io.ReaderAt, readerSi
 			// Block IDs are unique values to avoid issue if 2+ clients are uploading blocks
 			// at the same time causing PutBlockList to get a mix of blocks from all the clients.
 			blockIDList[blockNum] = base64.StdEncoding.EncodeToString(newUUID().bytes())
-			_, err := blockBlobURL.StageBlock(ctx, blockIDList[blockNum], body, o.AccessConditions.LeaseAccessConditions, nil)
+			_, err := blockBlobURL.StageBlock(
+				ctx,
+				blockIDList[blockNum],
+				body,
+				o.AccessConditions.LeaseAccessConditions,
+				nil,
+				cpk,
+			)
 			return err
 		},
 	})
@@ -85,16 +107,30 @@ func uploadReaderAtToBlockBlob(ctx context.Context, reader io.ReaderAt, readerSi
 	}
 
 	// All put blocks were successful, call Put Block List to finalize the blob
-	return blockBlobURL.CommitBlockList(ctx, blockIDList, o.BlobHTTPHeaders, o.Metadata, o.AccessConditions, o.BlobAccessTier, o.BlobTagsMap)
+	return blockBlobURL.CommitBlockList(
+		ctx,
+		blockIDList,
+		o.BlobHTTPHeaders,
+		o.Metadata,
+		o.AccessConditions,
+		o.BlobAccessTier,
+		o.BlobTagsMap,
+		cpk,
+	)
 }
 
 // UploadFileToBlockBlob uploads a file in blocks to a block blob.
-func UploadFileToBlockBlob(ctx context.Context, file *os.File,
-	blockBlobURL azblob.BlockBlobURL, o azblob.UploadToBlockBlobOptions) (azblob.CommonResponse, error) {
+func UploadFileToBlockBlob(
+	ctx context.Context,
+	file *os.File,
+	blockBlobURL azblob.BlockBlobURL,
+	o azblob.UploadToBlockBlobOptions,
+	cpk azblob.ClientProvidedKeyOptions,
+) (azblob.CommonResponse, error) {
 	stat, err := file.Stat()
 	if err != nil {
 		return nil, err
 	}
 
-	return uploadReaderAtToBlockBlob(ctx, file, stat.Size(), blockBlobURL, o)
+	return uploadReaderAtToBlockBlob(ctx, file, stat.Size(), blockBlobURL, o, cpk)
 }

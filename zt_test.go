@@ -56,7 +56,14 @@ func generateName(prefix string) string {
 	name = name[funcNameStart+len("Test"):] // Just get the name of the test and not any of the garbage at the beginning
 	name = strings.ToLower(name)            // Ensure it is a valid resource name
 	currentTime := time.Now()
-	name = fmt.Sprintf("%s%s%d%d%d", prefix, strings.ToLower(name), currentTime.Minute(), currentTime.Second(), currentTime.Nanosecond())
+	name = fmt.Sprintf(
+		"%s%s%d%d%d",
+		prefix,
+		strings.ToLower(name),
+		currentTime.Minute(),
+		currentTime.Second(),
+		currentTime.Nanosecond(),
+	)
 	return name
 }
 
@@ -75,7 +82,10 @@ func getContainerURL(c *chk.C, bsu azblob.ServiceURL) (container azblob.Containe
 	return container, name
 }
 
-func getBlockBlobURL(c *chk.C, container azblob.ContainerURL) (blob azblob.BlockBlobURL, name string) {
+func getBlockBlobURL(
+	c *chk.C,
+	container azblob.ContainerURL,
+) (blob azblob.BlockBlobURL, name string) {
 	name = generateBlobName()
 	blob = container.NewBlockBlobURL(name)
 
@@ -88,7 +98,10 @@ func getRandomDataAndReader(n int) (*bytes.Reader, []byte) {
 	return bytes.NewReader(data), data
 }
 
-func createNewContainer(c *chk.C, bsu azblob.ServiceURL) (container azblob.ContainerURL, name string) {
+func createNewContainer(
+	c *chk.C,
+	bsu azblob.ServiceURL,
+) (container azblob.ContainerURL, name string) {
 	container, name = getContainerURL(c, bsu)
 
 	cResp, err := container.Create(ctx, nil, azblob.PublicAccessNone)
@@ -108,7 +121,9 @@ func getGenericCredential(accountType string) (*azblob.SharedKeyCredential, erro
 	accountKeyEnvVar := accountType + "ACCOUNT_KEY"
 	accountName, accountKey := os.Getenv(accountNameEnvVar), os.Getenv(accountKeyEnvVar)
 	if accountName == "" || accountKey == "" {
-		return nil, errors.New(accountNameEnvVar + " and/or " + accountKeyEnvVar + " environment variables not specified.")
+		return nil, errors.New(
+			accountNameEnvVar + " and/or " + accountKeyEnvVar + " environment variables not specified.",
+		)
 	}
 	return azblob.NewSharedKeyCredential(accountName, accountKey)
 }
@@ -120,7 +135,9 @@ func getGenericBSU(accountType string) (azblob.ServiceURL, error) {
 	}
 
 	pipeline := azblob.NewPipeline(credential, azblob.PipelineOptions{})
-	blobPrimaryURL, _ := url.Parse("https://" + credential.AccountName() + ".blob.core.windows.net/")
+	blobPrimaryURL, _ := url.Parse(
+		"https://" + credential.AccountName() + ".blob.core.windows.net/",
+	)
 	return azblob.NewServiceURL(*blobPrimaryURL, pipeline), nil
 }
 
