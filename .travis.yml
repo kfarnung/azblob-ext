@@ -1,6 +1,6 @@
 language: go
 go:
-- "1.15"
+- "1.16"
 script:
 - export GO111MODULE=on
 - GOOS=linux go build
