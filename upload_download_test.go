@@ -30,8 +30,8 @@ func performUploadAndDownloadFileTest(
 	// Open the file to upload
 	file, err := os.Open(fileName)
 	c.Assert(err, chk.IsNil)
-	defer file.Close()
 	defer os.Remove(fileName)
+	defer file.Close()
 
 	// Get the service URL
 	bsu, err := getBSU()
@@ -66,8 +66,8 @@ func performUploadAndDownloadFileTest(
 	destFileName := "BigFile-downloaded.bin"
 	destFile, err := os.Create(destFileName)
 	c.Assert(err, chk.IsNil)
-	defer destFile.Close()
 	defer os.Remove(destFileName)
+	defer destFile.Close()
 
 	// Perform download
 	err = DownloadBlobToFile(
